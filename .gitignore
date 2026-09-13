@@ -30,3 +30,6 @@ dist/
 *.sqlite
 *.sqlite3
 langfuse/
+tmp/
+# Local scratch
+tmp/
