@@ -16,6 +16,10 @@ class Settings(BaseSettings):
     # mock 银行核心数据库
     bank_db_path: str = "bank.sqlite3"
 
+    # mock IdP:本地固定密钥签发 JWT(仅开发/教学用,生产应换真 IdP)
+    jwt_secret: str = "dev-only-fixed-secret-change-me-in-real-deploy"
+    jwt_ttl_seconds: int = 3600
+
     # MCP Server 地址(Streamable HTTP)
     mcp_accounts_url: str = "http://127.0.0.1:8101/mcp"
     mcp_transactions_url: str = "http://127.0.0.1:8102/mcp"

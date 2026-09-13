@@ -1,4 +1,4 @@
-"""种子数据:演示客户张三(C001)及其账户、交易。
+"""种子数据:演示客户张三(C001)、李四(C002)及其账户、交易。
 
 用法:python -m bank_agent.core.seed
 """
@@ -12,6 +12,7 @@ from bank_agent.core.db import init_db, make_engine
 from bank_agent.core.models import Account, AccountType, Customer, KycStatus, Transaction
 
 DEMO_CUSTOMER_ID = "C001"
+OTHER_CUSTOMER_ID = "C002"
 
 
 def seed(session: Session) -> None:
@@ -45,6 +46,27 @@ def seed(session: Session) -> None:
             ),
         ]
     )
+    # 第二个客户:跨用户隔离与越权测试用
+    if session.get(Customer, OTHER_CUSTOMER_ID) is None:
+        session.add(
+            Customer(
+                id=OTHER_CUSTOMER_ID,
+                name="李四",
+                phone="13900009999",
+                id_number="110101199202024321",
+                address="上海市徐汇区漕溪北路 100 号",
+                kyc_status=KycStatus.VERIFIED,
+            )
+        )
+        session.add(
+            Account(
+                id="A101",
+                customer_id=OTHER_CUSTOMER_ID,
+                account_number="6222020200778899",
+                account_type=AccountType.SAVINGS,
+                balance=500.00,
+            )
+        )
     base = datetime.now(UTC)
     txns = [
         ("T001", "A001", -58.00, "星巴克", "咖啡消费", 1),

@@ -1,21 +1,25 @@
-"""FastAPI HTTP 层:对话接口。
+"""FastAPI HTTP 层:对话接口,Bearer 验签是第一道闸门。
 
-认证暂缺(E3 补 Bearer 验签);Edge 中间件栈在 E9 收尾。
-本层只做请求/响应解析,调用契约由 chat.invoke_chat 统一拼装。
+- 无 token / token 非法 → 401;token 合法但不含任何业务 scope → 403。
+- customer_id 只来自 token,请求体不再接受该字段(用户只能操作自己的账户)。
+- 本层只做请求/响应解析,调用契约由 chat.invoke_chat 统一拼装。
+Edge 中间件栈(请求 ID、访问日志、限流)在 E9 收尾。
 """
 
-from fastapi import FastAPI
+from typing import Annotated
+
+from fastapi import Depends, FastAPI, Header, HTTPException
 from pydantic import BaseModel
 
+from bank_agent.auth.scopes import ALL_SCOPES
+from bank_agent.auth.tokens import AuthContext, AuthError, verify_token
 from bank_agent.chat import invoke_chat
 from bank_agent.composition import CompositionRoot
-from bank_agent.core.seed import DEMO_CUSTOMER_ID
 
 
 class ChatRequest(BaseModel):
     message: str
     thread_id: str | None = None  # 缺省开新会话
-    customer_id: str = DEMO_CUSTOMER_ID  # E3 起由 token 供给
 
 
 class ChatResponse(BaseModel):
@@ -27,9 +31,23 @@ class ChatResponse(BaseModel):
 def create_app(root: CompositionRoot) -> FastAPI:
     app = FastAPI(title="bank-agent")
 
+    async def require_auth(authorization: str = Header(default="")) -> AuthContext:
+        scheme, _, token = authorization.partition(" ")
+        if scheme.lower() != "bearer" or not token:
+            raise HTTPException(status_code=401, detail="缺少 Bearer token")
+        try:
+            auth = verify_token(root.settings, token)
+        except AuthError as exc:
+            raise HTTPException(status_code=401, detail=str(exc)) from exc
+        if not auth.scopes & ALL_SCOPES:
+            raise HTTPException(status_code=403, detail="token 不含任何业务权限")
+        return auth
+
     @app.post("/chat", response_model=ChatResponse)
-    async def chat(req: ChatRequest) -> ChatResponse:
-        result = await invoke_chat(root, req.message, req.thread_id, req.customer_id)
+    async def chat(
+        req: ChatRequest, auth: Annotated[AuthContext, Depends(require_auth)]
+    ) -> ChatResponse:
+        result = await invoke_chat(root, req.message, auth, req.thread_id)
         return ChatResponse(**result)
 
     @app.get("/healthz")
