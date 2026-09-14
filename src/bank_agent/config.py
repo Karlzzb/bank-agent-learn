@@ -16,6 +16,14 @@ class Settings(BaseSettings):
     # mock 银行核心数据库
     bank_db_path: str = "bank.sqlite3"
 
+    # 会话持久化(SQLite checkpointer,断线续聊)与跨会话长期记忆(LangGraph store)
+    checkpoint_db_path: str = "checkpoints.sqlite3"
+    memory_store_path: str = "memory.sqlite3"
+
+    # 会话内记忆:消息数超阈值后,最旧一段压缩为摘要,保留最近若干条原文
+    history_max_messages: int = 12
+    history_keep_recent: int = 4
+
     # mock IdP:本地固定密钥签发 JWT(仅开发/教学用,生产应换真 IdP)
     jwt_secret: str = "dev-only-fixed-secret-change-me-in-real-deploy"
     jwt_ttl_seconds: int = 3600

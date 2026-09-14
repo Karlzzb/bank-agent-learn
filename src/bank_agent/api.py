@@ -3,9 +3,11 @@
 - 无 token / token 非法 → 401;token 合法但不含任何业务 scope → 403。
 - customer_id 只来自 token,请求体不再接受该字段(用户只能操作自己的账户)。
 - 本层只做请求/响应解析,调用契约由 chat.invoke_chat 统一拼装。
+- lifespan 负责在进程退出时释放组合根持有的 SQLite 连接(否则进程退不出)。
 Edge 中间件栈(请求 ID、访问日志、限流)在 E9 收尾。
 """
 
+from contextlib import asynccontextmanager
 from typing import Annotated
 
 from fastapi import Depends, FastAPI, Header, HTTPException
@@ -29,7 +31,12 @@ class ChatResponse(BaseModel):
 
 
 def create_app(root: CompositionRoot) -> FastAPI:
-    app = FastAPI(title="bank-agent")
+    @asynccontextmanager
+    async def lifespan(app: FastAPI):
+        yield
+        await root.aclose()
+
+    app = FastAPI(title="bank-agent", lifespan=lifespan)
 
     async def require_auth(authorization: str = Header(default="")) -> AuthContext:
         scheme, _, token = authorization.partition(" ")

@@ -1,14 +1,14 @@
 """Coordinator 节点:结构化路由,clarify 是一等路由目标。
 
 只做路由,不直接回答业务问题;Coordinator ↔ 子 Agent 一跳往返由图结构保证
-(coordinator → 领域节点 → END,无回边);失控循环由调图时的 recursion_limit 兜底。
+(coordinator → 领域节点 → save_memory → END,无回边);失控循环由调图时的 recursion_limit 兜底。
+跨会话偏好不在这里注入:Coordinator 只分派不办事,偏好由领域子图在执行时注入。
 """
 
 import logging
 
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import AIMessage, SystemMessage
-from langgraph.graph import END
 from langgraph.types import Command
 
 from bank_agent.prompts import CLARIFY_FALLBACK, COORDINATOR_PROMPT
@@ -32,7 +32,7 @@ def make_coordinator_node(model: BaseChatModel):
         if decision.target == "clarify":
             question = decision.question or CLARIFY_FALLBACK
             update["messages"] = [AIMessage(question)]
-            return Command(goto=END, update=update)
+            return Command(goto="save_memory", update=update)
         return Command(goto=decision.target, update=update)
 
     return coordinator

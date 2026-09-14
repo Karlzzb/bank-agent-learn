@@ -54,9 +54,18 @@ make lint
   工具入参在工具层还原真实值,工具结果脱敏后才给 LLM。
   最终回复按映射回填,对用户透明。
 
+会话与记忆:
+
+- **断线续聊**:会话状态用 SQLite checkpointer 持久化(`CHECKPOINT_DB_PATH`),thread_id 即会话 ID。
+  进程重启后凭同一 thread_id 续聊,上下文完整(CLI 退出时会打印会话 ID,`python -m bank_agent.cli <id>` 续聊)。
+- **会话内摘要**:消息数超过 `HISTORY_MAX_MESSAGES` 后,最旧一段压缩为中文摘要,保留最近 `HISTORY_KEEP_RECENT` 条原文,长会话不丢关键上下文。
+- **跨会话长期记忆**:用户说"记住/常用/默认…"时,LLM 提取偏好写入 LangGraph store(SQLite,按客户隔离);
+  领域子图(真正办事的一层)执行时把已知偏好注入 prompt,含 PII 占位符的提取结果一律丢弃,store 不落 PII。
+
 ## 目录
 
 - `src/bank_agent/graph/` — Coordinator、子图、图构建
+- `src/bank_agent/memory/` — SQLite checkpointer 装配、摘要/偏好节点、SqliteStore
 - `src/bank_agent/mcp_servers/` — 三个 FastMCP Server
 - `src/bank_agent/core/` — SQLModel 实体、仓储、种子数据
 - `src/bank_agent/auth/` — JWT 签发/验签、scope 表、mock IdP CLI

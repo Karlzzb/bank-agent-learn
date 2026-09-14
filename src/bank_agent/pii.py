@@ -22,6 +22,14 @@ _PATTERNS: tuple[tuple[str, re.Pattern], ...] = (
     ("PHONE", re.compile(r"1[3-9]\d{9}")),
 )
 
+# 匹配任一已生成的占位符:会话作用域标记,不得泄漏到跨会话存储(如长期记忆)。
+PLACEHOLDER_PATTERN = re.compile(r"\[(?:ID_CARD|CARD|PHONE|NAME)_\d+\]")
+
+
+def contains_placeholder(text: str) -> bool:
+    """文本中是否含 PII 占位符。"""
+    return bool(PLACEHOLDER_PATTERN.search(text))
+
 
 def _placeholder_for(kind: str, value: str, mapping: dict[str, str]) -> str:
     """取该真实值的占位符:已映射则复用,否则按类型递增编号新建。"""

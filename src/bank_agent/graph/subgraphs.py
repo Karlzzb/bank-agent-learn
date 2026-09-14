@@ -1,6 +1,6 @@
 """领域子图:各自完整的 ReAct 循环,独立 system prompt,独立工具集。
 
-tool_steps 是子图私有键,不泄漏到父图状态。
+tool_steps / memory_context 是子图私有键,不泄漏到父图状态。
 工具集在节点内从 config 通道解析(tool_provider + customer_id),不进 prompt。
 """
 
@@ -25,13 +25,17 @@ MAX_TOOL_STEPS = 5
 class DomainState(TypedDict):
     messages: Annotated[list, add_messages]
     tool_steps: int  # 私有键:仅本子图读写
+    memory_context: str  # 私有键:跨会话偏好注入文本,由父图 runner 写入
 
 
 def build_domain_subgraph(domain: str, model: BaseChatModel):
     async def agent(state: DomainState, config) -> dict:
         tools = await resolve_tools(config, domain)
         bound = model.bind_tools(tools)
-        response = await bound.ainvoke([SystemMessage(DOMAIN_PROMPTS[domain]), *state["messages"]])
+        prompt = [SystemMessage(DOMAIN_PROMPTS[domain])]
+        if state.get("memory_context"):
+            prompt.append(SystemMessage(state["memory_context"]))
+        response = await bound.ainvoke([*prompt, *state["messages"]])
         return {"messages": [response]}
 
     async def call_tools(state: DomainState, config) -> dict:
