@@ -7,8 +7,6 @@
 真实落库直接对种子 SQLite 断言。
 """
 
-import json
-
 import httpx
 from langchain_core.messages import AIMessage
 from sqlmodel import Session, select
@@ -18,18 +16,7 @@ from bank_agent.composition import build_for_test
 from bank_agent.core.models import Customer, ServiceRequest
 from bank_agent.prompts import CLARIFY_FALLBACK, DEGRADED_MESSAGE
 from bank_agent.testing.fake_model import ScriptedChatModel
-from tests.helpers import auth_headers
-
-
-def route(target: str, **extra) -> AIMessage:
-    return AIMessage(content=json.dumps({"target": target, **extra}, ensure_ascii=False))
-
-
-def tool_call(name: str, args: dict, call_id: str = "tc1") -> AIMessage:
-    return AIMessage(
-        content="",
-        tool_calls=[{"name": name, "args": args, "id": call_id, "type": "tool_call"}],
-    )
+from tests.helpers import auth_headers, route, tool_call
 
 
 def make_client(model: ScriptedChatModel, db_path: str) -> httpx.AsyncClient:
