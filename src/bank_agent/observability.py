@@ -4,7 +4,8 @@
   否则 configure 不建客户端,trace_config 返回空 dict,图照常运行(测试与离线场景零依赖)。
 - 接入方式:Langfuse SDK v3 单例 + langchain CallbackHandler,经图调用 config 注入;
   一次对话的全部节点、LLM 调用、工具调用收进同一条 trace。
-- 归因维度(成本用 Langfuse 原生价格表,DeepSeek 单价已在默认价格表,不自建计数器):
+- 归因维度(成本用 Langfuse 原生价格表,不自建计数器;Langfuse 默认价格表不含 DeepSeek,
+  单价经 `make langfuse-prices` 幂等写入):
   会话 → langfuse_session_id = thread_id;用户 → langfuse_user_id = customer_id;
   Agent → 领域子图调用的 metadata.agent(见 graph/builder.py)与各节点名。
 - 进程退出前 flush,避免内存队列里的 trace 丢失。

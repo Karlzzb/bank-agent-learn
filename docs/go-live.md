@@ -31,7 +31,7 @@ WAF/DDoS 等基础设施能力也在此说明——它们不属于代码,代码�
 - [ ] Langfuse 从本地 compose 换成高可用部署(或云服务),`.env` 换对应项目的 key。
 - [ ] 模型价格表:Langfuse 默认价格表不含 DeepSeek,本地已用 `make langfuse-prices` 写入;
   换实例后需重跑;换其他模型在 Langfuse Models 页补单价,否则成本列为空。
-- [ ] 每次改 prompt / 路由逻辑后跑评测回归:`python -m evals.run --real --tag <标签>`,与基线报告 `python -m evals.compare` 对比。
+- [ ] 每次改 prompt / 路由逻辑后跑评测回归:`python -m evals.run --real` 出报告,与基线报告 `python -m evals.compare old.json new.json` 对比。
 
 ### LLM
 
