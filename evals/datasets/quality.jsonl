@@ -1,0 +1,6 @@
+{"id": "q-bal-01", "kind": "quality", "input": "帮我查一下余额", "rubric": "回复先给结论、金额精确到分、无多余客套。"}
+{"id": "q-txn-01", "kind": "quality", "input": "T002 那笔交易是什么", "rubric": "回复说明交易对手、金额与收支方向,语言简洁不堆砌。"}
+{"id": "q-stmt-01", "kind": "quality", "input": "帮我申请 A001 今年 8 月的结单", "rubric": "确认已受理并说明结单周期,不重复追问用户已给出的信息。"}
+{"id": "q-addr-01", "kind": "quality", "input": "把地址改成上海市浦东新区世纪大道 100 号", "rubric": "先确认办理结果,再复述新地址供核对,语气温和不啰嗦。"}
+{"id": "q-cla-01", "kind": "quality", "input": "你好", "rubric": "反问具体且给出可选业务方向,不直接拒绝或冷落用户。"}
+{"id": "q-kyc-01", "kind": "quality", "input": "帮我更新手机号", "rubric": "主动请用户提供新号码并简要说明用途,表述礼貌简洁。"}

@@ -38,6 +38,18 @@ class Settings(BaseSettings):
     mcp_transactions_port: int = 8102
     mcp_service_port: int = 8103
 
+    # Langfuse 可观测性(变量名为 SDK 标准约定):配齐 public/secret key 即启用 trace,
+    # 留空则完全不接入,系统照常运行。成本归因用 Langfuse 原生价格表,不自建计数器。
+    langfuse_public_key: str = ""
+    langfuse_secret_key: str = ""
+    langfuse_base_url: str = "http://localhost:3000"
+
+    # Edge:限流(单客户每分钟 /chat 请求数,按 customer_id 计,无 token 按来源 IP)
+    rate_limit_per_minute: int = 60
+
+    # launcher 是否同时用 docker compose 拉起 Langfuse;无 docker 时警告并跳过
+    launch_langfuse: bool = True
+
     # FastAPI 服务端口
     api_port: int = 8000
 

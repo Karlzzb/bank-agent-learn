@@ -13,13 +13,14 @@
 import logging
 
 from langchain_core.language_models import BaseChatModel
-from langchain_core.messages import AIMessage, HumanMessage, RemoveMessage, SystemMessage
+from langchain_core.messages import HumanMessage, RemoveMessage, SystemMessage
 from langgraph.runtime import Runtime
 from langgraph.store.base import BaseStore
 from pydantic import BaseModel, Field
 
 from bank_agent.auth.tokens import AuthContext
 from bank_agent.json_output import JsonOutputError, parse_json_output
+from bank_agent.llm import content_text
 from bank_agent.pii import contains_placeholder
 from bank_agent.prompts import MEMORY_EXTRACT_PROMPT, SUMMARY_PROMPT
 from bank_agent.state import BankState
@@ -39,11 +40,6 @@ class _PreferenceExtraction(BaseModel):
     preferences: dict[str, str] = Field(default_factory=dict, validation_alias="items")
 
 
-def _content_text(response: AIMessage) -> str:
-    content = response.content
-    return content if isinstance(content, str) else str(content)
-
-
 def make_context_node(model: BaseChatModel, max_messages: int, keep_recent: int):
     async def manage_context(state: BankState, config) -> dict:
         messages = state["messages"]
@@ -55,14 +51,14 @@ def make_context_node(model: BaseChatModel, max_messages: int, keep_recent: int)
         if cut == 0 or cut >= len(messages):
             return {}  # 找不到安全切口:本轮不压缩,等下一轮
         old = messages[:cut]
-        response = await model.ainvoke([SystemMessage(SUMMARY_PROMPT), *old])
+        response = await model.ainvoke([SystemMessage(SUMMARY_PROMPT), *old], config)
         head, *tail = old
         logger.info(
             "会话消息数 %d 超阈值 %d,最旧 %d 条压缩为摘要", len(messages), max_messages, len(old)
         )
         return {
             "messages": [
-                SystemMessage(f"【前情摘要】{_content_text(response)}", id=head.id),
+                SystemMessage(f"【前情摘要】{content_text(response)}", id=head.id),
                 *[RemoveMessage(id=m.id) for m in tail],
             ]
         }
@@ -81,12 +77,12 @@ def make_memory_node(model: BaseChatModel):
         if not isinstance(user_text, str) or not any(w in user_text for w in MEMORY_TRIGGER_WORDS):
             return {}
         response = await model.ainvoke(
-            [SystemMessage(MEMORY_EXTRACT_PROMPT), HumanMessage(user_text)]
+            [SystemMessage(MEMORY_EXTRACT_PROMPT), HumanMessage(user_text)], config
         )
         try:
-            extracted = parse_json_output(_content_text(response), _PreferenceExtraction)
+            extracted = parse_json_output(content_text(response), _PreferenceExtraction)
         except JsonOutputError:
-            logger.warning("偏好提取输出解析失败,跳过;原始输出:%r", _content_text(response)[:500])
+            logger.warning("偏好提取输出解析失败,跳过;原始输出:%r", content_text(response)[:500])
             return {}
         # 占位符是会话级映射,跨会话无意义:含占位符的条目丢弃,不污染 store
         items = {

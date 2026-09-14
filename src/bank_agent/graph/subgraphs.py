@@ -35,7 +35,7 @@ def build_domain_subgraph(domain: str, model: BaseChatModel):
         prompt = [SystemMessage(DOMAIN_PROMPTS[domain])]
         if state.get("memory_context"):
             prompt.append(SystemMessage(state["memory_context"]))
-        response = await bound.ainvoke([*prompt, *state["messages"]])
+        response = await bound.ainvoke([*prompt, *state["messages"]], config)
         return {"messages": [response]}
 
     async def call_tools(state: DomainState, config) -> dict:

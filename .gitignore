@@ -31,5 +31,8 @@ dist/
 *.sqlite3
 langfuse/
 tmp/
+
+# Eval reports
+evals/reports/
 # Local scratch
 tmp/

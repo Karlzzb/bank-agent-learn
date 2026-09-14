@@ -39,9 +39,18 @@ def make_domain_runner(domain: str, subgraph):
             auth = config["configurable"]["auth"]
             memory_context = format_preferences(await load_preferences(store, auth.customer_id))
         try:
+            # config 整体透传:子图运行挂在父 run 下(trace 不碎);
+            # metadata 打 agent 标签,Langfuse 里按 observation metadata 归因到领域 Agent
+            child_config = dict(config)
+            parent_meta = config.get("metadata", {})
+            child_config["metadata"] = {
+                **parent_meta,
+                "agent": domain,
+                "langfuse_tags": [*parent_meta.get("langfuse_tags", []), f"agent:{domain}"],
+            }
             result = await subgraph.ainvoke(
                 {"messages": state["messages"], "tool_steps": 0, "memory_context": memory_context},
-                config={"configurable": config.get("configurable", {})},
+                config=child_config,
             )
         except Exception:
             logger.exception("子图 %s 执行异常,返回降级话术", domain)

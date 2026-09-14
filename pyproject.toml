@@ -15,6 +15,9 @@ dependencies = [
     "pydantic-settings>=2.4",
     "pyjwt>=2.8",
     "langgraph-checkpoint-sqlite>=3.1.1",
+    "langfuse>=3,<4",
+    "slowapi>=0.1.9",
+    "langchain>=0.3",
 ]
 
 [project.optional-dependencies]

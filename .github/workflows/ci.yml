@@ -1,0 +1,28 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: uv sync --extra dev
+
+      - name: Lint
+        run: |
+          uv run ruff check src tests evals
+          uv run ruff format --check src tests evals
+
+      # 全量测试均为确定性假 model(含评测套件的 CI 子集),不消耗真实 API 额度
+      - name: Test
+        run: uv run pytest

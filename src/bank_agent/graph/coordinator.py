@@ -11,6 +11,7 @@ from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import AIMessage, SystemMessage
 from langgraph.types import Command
 
+from bank_agent.llm import content_text
 from bank_agent.prompts import CLARIFY_FALLBACK, COORDINATOR_PROMPT
 from bank_agent.routing import RouteDecision, RouteParseError, parse_route_decision
 from bank_agent.state import BankState
@@ -20,8 +21,11 @@ logger = logging.getLogger(__name__)
 
 def make_coordinator_node(model: BaseChatModel):
     async def coordinator(state: BankState, config) -> Command:
-        response = await model.ainvoke([SystemMessage(COORDINATOR_PROMPT), *state["messages"]])
-        raw = response.content if isinstance(response.content, str) else str(response.content)
+        # config 显式下传:LLM 调用挂为图内子 run,trace/成本才能归因到本节点
+        response = await model.ainvoke(
+            [SystemMessage(COORDINATOR_PROMPT), *state["messages"]], config
+        )
+        raw = content_text(response)
         try:
             decision = parse_route_decision(raw)
         except RouteParseError:

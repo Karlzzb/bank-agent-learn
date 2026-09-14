@@ -13,6 +13,7 @@ from langgraph.errors import GraphRecursionError
 
 from bank_agent.auth.tokens import AuthContext
 from bank_agent.composition import CompositionRoot
+from bank_agent.observability import trace_config
 from bank_agent.pii import mask_text, rehydrate
 from bank_agent.prompts import DEGRADED_MESSAGE
 
@@ -42,6 +43,8 @@ async def invoke_chat(
             "tool_provider": root.tool_provider,
             "pii_map": pii_map,  # 工具层共享同一份映射:还原入参、脱敏结果
         },
+        # Langfuse trace(未启用时为空 dict):一次对话的节点/LLM/工具调用进同一条 trace
+        **trace_config(thread_id, auth.customer_id),
     }
     try:
         result = await root.graph.ainvoke(

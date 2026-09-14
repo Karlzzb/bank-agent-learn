@@ -1,6 +1,6 @@
 PYTHON := .venv/bin/python
 
-.PHONY: setup seed run test lint cli
+.PHONY: setup seed run test lint cli langfuse-prices
 
 setup:
 	python3.12 -m venv .venv
@@ -11,6 +11,9 @@ seed:
 
 run: seed
 	$(PYTHON) -m bank_agent.launcher
+
+langfuse-prices:
+	$(PYTHON) -m bank_agent.langfuse_setup
 
 cli: seed
 	$(PYTHON) -m bank_agent.cli

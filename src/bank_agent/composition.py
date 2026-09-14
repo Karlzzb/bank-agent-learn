@@ -21,6 +21,8 @@ from bank_agent.graph.builder import build_graph
 from bank_agent.llm import create_chat_model
 from bank_agent.memory import SqliteStore
 from bank_agent.memory.checkpointing import aclose_checkpointer, amake_sqlite_checkpointer
+from bank_agent.observability import configure as configure_langfuse
+from bank_agent.observability import flush as flush_langfuse
 from bank_agent.tool_providers import DirectToolProvider, McpToolProvider, ToolProvider
 
 
@@ -39,6 +41,7 @@ class CompositionRoot:
         close = getattr(self.store, "close", None)
         if close is not None:
             close()
+        flush_langfuse()  # 冲刷 trace 事件队列;未启用时为空操作
 
 
 async def build_production(settings: Settings | None = None) -> CompositionRoot:
@@ -46,6 +49,7 @@ async def build_production(settings: Settings | None = None) -> CompositionRoot:
     settings = settings or get_settings()
     engine = make_engine(settings.bank_db_path)
     init_db(engine)
+    configure_langfuse(settings)  # 配齐 key 才建客户端,否则可观测性整体关闭
     model: BaseChatModel = create_chat_model(settings)
     provider = McpToolProvider(
         {
