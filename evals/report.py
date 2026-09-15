@@ -1,7 +1,7 @@
 """评测报告:JSON(机器可读,供 compare 对比)与 Markdown(人读)双写。
 
 文件名内嵌 UTC 时间戳与 git 短 sha:多次运行互不覆盖,且能回溯代码版本。
-prompts 哈希(sha256 前 12 位)让"改 prompt 前后"的对比有据可查。
+prompts 哈希(sha256 前 12 位)覆盖全部模型可见文本,让"改 prompt 前后"的对比有据可查。
 """
 
 import hashlib
@@ -11,9 +11,22 @@ from dataclasses import asdict
 from datetime import UTC, datetime
 from pathlib import Path
 
+import bank_agent.domains.accounts.tools
+import bank_agent.domains.service.tools
+import bank_agent.domains.transactions.tools
 import bank_agent.prompts
 
+from . import judges
 from .harness import CaseResult
+
+# 模型可见文本的载体:系统 prompt、工具 docstring(能力描述约定在工具层)、评审 prompt
+_MODEL_FACING_MODULES = [
+    bank_agent.prompts,
+    bank_agent.domains.accounts.tools,
+    bank_agent.domains.transactions.tools,
+    bank_agent.domains.service.tools,
+    judges,
+]
 
 
 def git_sha() -> str:
@@ -30,8 +43,11 @@ def git_sha() -> str:
 
 
 def prompts_hash() -> str:
-    """prompts.py 内容的 sha256 前 12 位:prompt 变更的指纹。"""
-    return hashlib.sha256(Path(bank_agent.prompts.__file__).read_bytes()).hexdigest()[:12]
+    """模型可见文本的 sha256 前 12 位:prompt / 工具 docstring / 评审 prompt 的变更指纹。"""
+    h = hashlib.sha256()
+    for mod in _MODEL_FACING_MODULES:
+        h.update(Path(mod.__file__).read_bytes())
+    return h.hexdigest()[:12]
 
 
 def build_meta(model: str, mode: str) -> dict:
