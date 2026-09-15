@@ -6,7 +6,7 @@ from bank_agent.core.repositories import TransactionsRepository
 
 
 def list_transactions(session: Session, customer_id: str, account_id: str, limit: int = 10) -> dict:
-    """查询账户最近的交易列表。"""
+    """查询账户最近的交易列表。用户指定笔数(如"最近三笔")时,limit 必须传该数字。"""
     repo = TransactionsRepository(session)
     txns = repo.list_transactions(customer_id, account_id, limit)
     return {
