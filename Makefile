@@ -1,6 +1,6 @@
 PYTHON := .venv/bin/python
 
-.PHONY: setup seed run test lint cli langfuse-prices
+.PHONY: setup seed run test lint cli langfuse-prices eval eval-real
 
 setup:
 	python3.12 -m venv .venv
@@ -24,3 +24,9 @@ test:
 lint:
 	$(PYTHON) -m ruff check src tests
 	$(PYTHON) -m ruff format --check src tests
+
+eval:
+	$(PYTHON) -m evals.run
+
+eval-real:
+	$(PYTHON) -m evals.run --real

@@ -14,6 +14,7 @@ from langgraph.graph import END, START, StateGraph
 from langgraph.graph.message import add_messages
 from typing_extensions import TypedDict
 
+from bank_agent.core.repositories import NotFoundError
 from bank_agent.prompts import DEGRADED_MESSAGE, DOMAIN_PROMPTS
 from bank_agent.tool_providers import resolve_tools
 
@@ -50,7 +51,9 @@ def build_domain_subgraph(domain: str, model: BaseChatModel):
                 try:
                     content = await tool.ainvoke(call["args"])
                 except Exception as exc:
-                    logger.warning("工具 %s 调用失败:%s", call["name"], exc)
+                    # NotFoundError 是预期内的领域错误(查不到/无权见),不是系统故障,不刷警告
+                    log = logger.info if isinstance(exc, NotFoundError) else logger.warning
+                    log("工具 %s 调用失败:%s", call["name"], exc)
                     content = json.dumps({"error": f"工具调用失败:{exc}"}, ensure_ascii=False)
             results.append(ToolMessage(content=str(content), tool_call_id=call["id"]))
         return {"messages": results, "tool_steps": state.get("tool_steps", 0) + 1}

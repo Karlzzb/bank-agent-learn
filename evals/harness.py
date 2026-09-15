@@ -11,6 +11,7 @@
 """
 
 import json
+import re
 import shutil
 import tempfile
 from collections.abc import Callable
@@ -193,6 +194,13 @@ def _make_auth(case: EvalCase) -> AuthContext:
 
 _TABLES = {"customer": Customer, "account": Account, "service_request": ServiceRequest}
 
+_THOUSANDS_RE = re.compile(r"(?<=\d),(?=\d)")
+
+
+def _strip_thousands(text: str) -> str:
+    """去掉数字千分位逗号:reply_contains 断言金额数值,不断言 LLM 的格式化风格。"""
+    return _THOUSANDS_RE.sub("", text)
+
 
 def _assert_expect(case: EvalCase, result: dict, calls: list[dict], engine: Engine) -> list[str]:
     expect = case.expect
@@ -213,11 +221,12 @@ def _assert_expect(case: EvalCase, result: dict, calls: list[dict], engine: Engi
                 f"缺少工具调用 {wanted.name}(args 含 {wanted.args_contains});实际调用:{actual}"
             )
     reply = result["reply"]
+    normalized = _strip_thousands(reply)
     for needle in expect.reply_contains:
-        if needle not in reply:
+        if _strip_thousands(needle) not in normalized:
             failures.append(f"reply 应包含 {needle!r};实际回复:{reply!r}")
     for needle in expect.reply_not_contains:
-        if needle in reply:
+        if _strip_thousands(needle) in normalized:
             failures.append(f"reply 不应包含 {needle!r};实际回复:{reply!r}")
     failures.extend(_db_failures(case, engine))
     return failures

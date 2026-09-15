@@ -23,6 +23,9 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--real", action="store_true", help="用真实 LLM 跑全量用例(消耗 API 额度)")
     parser.add_argument("--kinds", default="", help="按 kind 过滤,逗号分隔,如 routing,tool")
     parser.add_argument("--reports-dir", default="evals/reports", help="报告输出目录")
+    parser.add_argument(
+        "--concurrency", type=int, default=5, help="--real 模式并发用例数(每用例独立种子库)"
+    )
     return parser.parse_args(argv)
 
 
@@ -32,12 +35,16 @@ async def _run_all(args: argparse.Namespace) -> tuple[list[CaseResult], dict]:
     if args.real:
         settings = get_settings()
         model = create_chat_model(settings)
-        results = [
-            await run_case_real(
-                case, lambda db_path: build_for_test(model, db_path), judge_model=model
-            )
-            for case in cases
-        ]
+        # 用例间零共享状态(各自临时种子库),可安全并发;semaphore 限制 API 并发
+        sem = asyncio.Semaphore(args.concurrency)
+
+        async def run_one_case(case):
+            async with sem:
+                return await run_case_real(
+                    case, lambda db_path: build_for_test(model, db_path), judge_model=model
+                )
+
+        results = list(await asyncio.gather(*(run_one_case(c) for c in cases)))
         meta = build_meta(settings.llm_model, "real")
     else:
         scripted = [c for c in cases if c.script]
