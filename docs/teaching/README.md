@@ -16,7 +16,7 @@
 | E4 | [E4-会话持久化.md](E4-会话持久化.md) | 断线续聊;共享状态的写者与 reducer 规则 | `e4` | e4-arch.png、e4-state-writers.png |
 | E5 | [E5-记忆管理.md](E5-记忆管理.md) | 会话内摘要压缩 + 跨会话长期偏好 | `e5` | e5-arch.png、e5-memory-flow.png |
 | E6 | [E6-PII脱敏.md](E6-PII脱敏.md) | 手机号/卡号不原样发给第三方 LLM | `e6` | e6-arch.png、e6-pii-flow.png |
-| E7 | [E7-可观测性与成本.md](E7-可观测性与成本.md) | trace 里现场调试一次路由错误 | `e7` | e7-arch.png、e7-trace-structure.png |
+| E7 | [E7-可观测性与成本.md](E7-可观测性与成本.md) | trace 里现场调试一次路由错误 | `e7` | e7-arch.png、e7-trace-structure.png、assets/traces/ 下 6 张真实 trace 截图 |
 | E8 | [E8-评测套件.md](E8-评测套件.md) | 改 prompt 前后跑分对比,"你敢改吗"有实证 | `e8` | e8-arch.png、e8-eval-flow.png |
 | E9 | [E9-Edge收尾与接真银行系统.md](E9-Edge收尾与接真银行系统.md) | 上线清单;WAF/DDoS 为什么在基础设施层;收官 | `e9` | e9-arch.png |
 
