@@ -1,0 +1,40 @@
+%% E2 垂直拆分:Coordinator 结构化路由 + 三个领域子图,替代胖 Agent
+flowchart TB
+    subgraph 客户端
+        UI["用户界面<br/>(CLI / HTTP 客户端)"]
+    end
+
+    subgraph API["API 层(api.py):裸 /chat,无认证"]
+        CHAT["POST /chat"]
+    end
+
+    subgraph Graph["LangGraph 图(graph/)"]
+        COORD["Coordinator<br/>结构化路由:accounts / transactions / service / clarify"]
+        subgraph Agents["三个领域 ReAct 子图"]
+            AA["Accounts Agent"]
+            TA["Transactions Agent"]
+            SA["Service Agent"]
+        end
+    end
+
+    subgraph MCP["三个 MCP Server(Streamable HTTP)"]
+        MA["accounts-mcp :8101<br/>query_balance"]
+        MT["transactions-mcp :8102<br/>list_transactions / get_transaction_detail / request_statement"]
+        MS["service-mcp :8103<br/>change_address / request_cheque_book / update_kyc"]
+    end
+
+    DB[("bank.sqlite3<br/>mock 银行核心")]
+    LLM["第三方 LLM<br/>(DeepSeek,OpenAI 兼容接口)"]
+
+    UI --> CHAT --> COORD
+    COORD --> AA & TA & SA
+    AA --> MA
+    TA --> MT
+    SA --> MS
+    MA & MT & MS --> DB
+    COORD & Agents -.->|调用| LLM
+
+    style COORD fill:#ffe0b2,stroke:#f57c00,stroke-width:2px
+    style AA fill:#ffe0b2,stroke:#f57c00,stroke-width:2px
+    style TA fill:#ffe0b2,stroke:#f57c00,stroke-width:2px
+    style SA fill:#ffe0b2,stroke:#f57c00,stroke-width:2px

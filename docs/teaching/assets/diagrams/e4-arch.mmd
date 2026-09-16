@@ -1,0 +1,46 @@
+%% E4 会话持久化:checkpointer 落 SQLite,thread_id 即会话 ID,断线续聊
+flowchart TB
+    subgraph 客户端
+        UI["用户界面<br/>(CLI / HTTP 客户端)"]
+    end
+
+    subgraph API["API 层(api.py)"]
+        CHAT["POST /chat"]
+        AUTH["认证闸门<br/>验签 JWT,不符 401"]
+    end
+
+    IDP["mock IdP<br/>签发 HS256 JWT"]
+
+    subgraph Graph["LangGraph 图(graph/)"]
+        COORD["Coordinator<br/>结构化路由:accounts / transactions / service / clarify"]
+        subgraph Agents["三个领域 ReAct 子图"]
+            AA["Accounts Agent"]
+            TA["Transactions Agent"]
+            SA["Service Agent"]
+        end
+    end
+
+    subgraph MCP["三个 MCP Server(Streamable HTTP)"]
+        SCOPE["scope 校验<br/>验签 X-Bank-Token,不足 403"]
+        MA["accounts-mcp :8101<br/>query_balance"]
+        MT["transactions-mcp :8102<br/>list_transactions / get_transaction_detail / request_statement"]
+        MS["service-mcp :8103<br/>change_address / request_cheque_book / update_kyc"]
+    end
+
+    DB[("bank.sqlite3<br/>mock 银行核心")]
+    CKPT[("checkpoints.sqlite3<br/>会话状态(thread_id),断线续聊")]
+    LLM["第三方 LLM<br/>(DeepSeek,OpenAI 兼容接口)"]
+
+    UI --> CHAT
+    IDP -.->|签发 JWT| UI
+    CHAT --> AUTH --> COORD
+    COORD --> AA & TA & SA
+    AA -->|X-Bank-Token 头| SCOPE
+    TA --> SCOPE
+    SA --> SCOPE
+    SCOPE --> MA & MT & MS
+    MA & MT & MS --> DB
+    Graph <--> CKPT
+    COORD & Agents -.->|调用| LLM
+
+    style CKPT fill:#ffe0b2,stroke:#f57c00,stroke-width:2px

@@ -19,6 +19,9 @@
 答案会比你想的短得多,而这个"短",恰恰是我们九集架构的价值证明。
 今天的三件事:先把 Edge 层的最后几块砖砌上——请求 ID、访问日志、限流;然后讲透一个反直觉的论点——WAF 和 DDoS 防护为什么坚决不写进代码;最后对着上线清单和替换模块表,给全系列画上句号。
 
+![E9 最终架构](assets/diagrams/e9-arch.png)
+图注:这是十集走到的终点,客户端与 API 之间补上了 Edge 层,请求 ID、访问日志、按客户限流归代码管,WAF 与 DDoS 留在基础设施层;一张图看清谁在门内、谁在门外。
+
 ## 概念要点
 
 - **请求 ID 与访问日志**:每个请求进门就发一个 request ID,响应头 `X-Request-ID` 带回给调用方,访问日志(logger `bank_agent.access`)记录 request ID、方法、路径、状态码、耗时、客户,一次调用全链路按这一个 ID 串联(`src/bank_agent/edge.py`,`RequestContextMiddleware`)。

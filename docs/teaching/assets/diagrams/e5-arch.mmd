@@ -1,0 +1,50 @@
+%% E5 记忆管理:manage_context 会话内摘要压缩 + memory.sqlite3 跨会话长期记忆
+flowchart TB
+    subgraph 客户端
+        UI["用户界面<br/>(CLI / HTTP 客户端)"]
+    end
+
+    subgraph API["API 层(api.py)"]
+        CHAT["POST /chat"]
+        AUTH["认证闸门<br/>验签 JWT,不符 401"]
+    end
+
+    IDP["mock IdP<br/>签发 HS256 JWT"]
+
+    subgraph Graph["LangGraph 图(graph/)"]
+        CTX["manage_context<br/>会话内摘要压缩 + 长期记忆读取"]
+        COORD["Coordinator<br/>结构化路由:accounts / transactions / service / clarify"]
+        subgraph Agents["三个领域 ReAct 子图"]
+            AA["Accounts Agent"]
+            TA["Transactions Agent"]
+            SA["Service Agent"]
+        end
+    end
+
+    subgraph MCP["三个 MCP Server(Streamable HTTP)"]
+        SCOPE["scope 校验<br/>验签 X-Bank-Token,不足 403"]
+        MA["accounts-mcp :8101<br/>query_balance"]
+        MT["transactions-mcp :8102<br/>list_transactions / get_transaction_detail / request_statement"]
+        MS["service-mcp :8103<br/>change_address / request_cheque_book / update_kyc"]
+    end
+
+    DB[("bank.sqlite3<br/>mock 银行核心")]
+    CKPT[("checkpoints.sqlite3<br/>会话状态(thread_id),断线续聊")]
+    STORE[("memory.sqlite3<br/>跨会话长期记忆(profiles)")]
+    LLM["第三方 LLM<br/>(DeepSeek,OpenAI 兼容接口)"]
+
+    UI --> CHAT
+    IDP -.->|签发 JWT| UI
+    CHAT --> AUTH --> CTX --> COORD
+    COORD --> AA & TA & SA
+    AA -->|X-Bank-Token 头| SCOPE
+    TA --> SCOPE
+    SA --> SCOPE
+    SCOPE --> MA & MT & MS
+    MA & MT & MS --> DB
+    CTX <--> CKPT
+    CTX <--> STORE
+    COORD & Agents -.->|调用| LLM
+
+    style CTX fill:#ffe0b2,stroke:#f57c00,stroke-width:2px
+    style STORE fill:#ffe0b2,stroke:#f57c00,stroke-width:2px

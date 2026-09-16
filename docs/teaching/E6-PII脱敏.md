@@ -29,6 +29,9 @@
 目标是让大模型从头到尾只见过占位符,而客户完全无感。
 顺便交代一句代码沿革:这套 PII 代码其实在第三集认证授权那个 commit 就一并落库了,本集只是第一次专门讲它,e6 tag 包含它的完整形态,大家用 tag 对照即可。
 
+![E6 当期架构](assets/diagrams/e6-arch.png)
+图注:在上一集图上多了三个 PII 节点,入站脱敏在进图之前,工具层还原在到 MCP 之前,出站回填在回复客户之前;LLM 被这三道闸围在占位符世界里。
+
 ## 概念要点
 
 - **为什么是确定性规则,而不是 NER 或 Presidio**:银行场景的 PII 格式高度规则化,身份证号 18 位、卡号 16 到 19 位、手机号 1 开头 11 位,正则就够了(`src/bank_agent/pii.py` 的 `_PATTERNS`)。
@@ -40,6 +43,10 @@
 - **映射表绝不能进大模型的 prompt**:它只走 config 通道和会话 state,和 E3 里 token 的待遇一样——凭证与真值,大模型都碰不到(`src/bank_agent/chat.py` 的 config 拼装)。
 - **同一真实值复用同一占位符**:大模型看到的指代前后一致,才能正确理解"还是刚才那个号码"(`src/bank_agent/pii.py` 的 `_placeholder_for`)。
 - **三道边界各管一段**:入站由 `chat.py` 在消息进图前脱敏;工具层由 `tool_providers.py` 的 `_rehydrate_args` 还原入参、`_mask_result` 脱敏结果;出站由 `chat.py` 用 `rehydrate` 回填最终回复。
+
+![E6 PII 三道边界](assets/diagrams/e6-pii-flow.png)
+图注:跟着一个真实手机号 13800001111 走完全程,虚线框是 LLM 的边界,它从头到尾只见 [PHONE_1],真实值只在脱敏与回填两道关口之间流动。
+
 - **长期记忆不许带走 PII**:记忆提取结果里凡含占位符的条目一律丢弃,store 不落任何 PII(`src/bank_agent/memory/nodes.py` 的 `contains_placeholder` 过滤)。
 - **为什么占位符必须丢弃而不是回填**:占位符是会话作用域的标记,跨会话的 store 里即使回填也可能拿错映射,最安全的策略就是不让它出会话(`src/bank_agent/pii.py` 的 `PLACEHOLDER_PATTERN` 注释)。
 

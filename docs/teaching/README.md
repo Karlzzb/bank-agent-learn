@@ -7,18 +7,18 @@
 
 ## 分集地图
 
-| 集 | 教案 | 一句话 | git tag |
-| --- | --- | --- | --- |
-| E0 | [E0-客户需求开场.md](E0-客户需求开场.md) | 客户到底要什么;设计图走读;全系列 roadmap | `e0` |
-| E1 | [E1-单Agent挂满工具的失败.md](E1-单Agent挂满工具的失败.md) | 最直觉的做法现场翻车:一个 Agent 挂 7 个工具 | `e1` |
-| E2 | [E2-垂直拆分多智能体.md](E2-垂直拆分多智能体.md) | Coordinator 路由 + 三领域子图 + 三个 MCP Server | `e2` |
-| E3 | [E3-认证与授权.md](E3-认证与授权.md) | token 走 config 通道,LLM 永远碰不到凭证 | `e3` |
-| E4 | [E4-会话持久化.md](E4-会话持久化.md) | 断线续聊;共享状态的写者与 reducer 规则 | `e4` |
-| E5 | [E5-记忆管理.md](E5-记忆管理.md) | 会话内摘要压缩 + 跨会话长期偏好 | `e5` |
-| E6 | [E6-PII脱敏.md](E6-PII脱敏.md) | 手机号/卡号不原样发给第三方 LLM | `e6` |
-| E7 | [E7-可观测性与成本.md](E7-可观测性与成本.md) | trace 里现场调试一次路由错误 | `e7` |
-| E8 | [E8-评测套件.md](E8-评测套件.md) | 改 prompt 前后跑分对比,"你敢改吗"有实证 | `e8` |
-| E9 | [E9-Edge收尾与接真银行系统.md](E9-Edge收尾与接真银行系统.md) | 上线清单;WAF/DDoS 为什么在基础设施层;收官 | `e9` |
+| 集 | 教案 | 一句话 | git tag | 本集图 |
+| --- | --- | --- | --- | --- |
+| E0 | [E0-客户需求开场.md](E0-客户需求开场.md) | 客户到底要什么;设计图走读;全系列 roadmap | `e0` | e0-blueprint.png |
+| E1 | [E1-单Agent挂满工具的失败.md](E1-单Agent挂满工具的失败.md) | 最直觉的做法现场翻车:一个 Agent 挂 7 个工具 | `e1` | e1-naive-arch.png、e1-failure-modes.png |
+| E2 | [E2-垂直拆分多智能体.md](E2-垂直拆分多智能体.md) | Coordinator 路由 + 三领域子图 + 三个 MCP Server | `e2` | e2-arch.png |
+| E3 | [E3-认证与授权.md](E3-认证与授权.md) | token 走 config 通道,LLM 永远碰不到凭证 | `e3` | e3-arch.png、e3-token-flow.png |
+| E4 | [E4-会话持久化.md](E4-会话持久化.md) | 断线续聊;共享状态的写者与 reducer 规则 | `e4` | e4-arch.png、e4-state-writers.png |
+| E5 | [E5-记忆管理.md](E5-记忆管理.md) | 会话内摘要压缩 + 跨会话长期偏好 | `e5` | e5-arch.png、e5-memory-flow.png |
+| E6 | [E6-PII脱敏.md](E6-PII脱敏.md) | 手机号/卡号不原样发给第三方 LLM | `e6` | e6-arch.png、e6-pii-flow.png |
+| E7 | [E7-可观测性与成本.md](E7-可观测性与成本.md) | trace 里现场调试一次路由错误 | `e7` | e7-arch.png、e7-trace-structure.png |
+| E8 | [E8-评测套件.md](E8-评测套件.md) | 改 prompt 前后跑分对比,"你敢改吗"有实证 | `e8` | e8-arch.png、e8-eval-flow.png |
+| E9 | [E9-Edge收尾与接真银行系统.md](E9-Edge收尾与接真银行系统.md) | 上线清单;WAF/DDoS 为什么在基础设施层;收官 | `e9` | e9-arch.png |
 
 分集叙事链(不可打乱):E1 制造问题 → E2 的拆分制造协调问题 → 多 Agent 架构制造 token 传递(E3)与状态一致性(E4/E5)问题 → 能跑之后是数据安全(E6)→ 可观测(E7)→ 可度量(E8)→ 可上线(E9)。
 

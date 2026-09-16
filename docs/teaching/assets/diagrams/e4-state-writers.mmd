@@ -1,0 +1,25 @@
+%% e4-state-writers BankState 各 channel 的写者与 reducer 规则,一个 channel 一个写者
+flowchart TB
+    RULE["核心规则:一个 channel 一个写者<br/>多写者必须配 reducer,避免并发覆盖"]
+
+    subgraph STATE["BankState(src/bank_agent/state.py)"]
+        CH_MSG["messages<br/>reducer = add_messages"]
+        CH_ROUTE["route / rationale<br/>无 reducer,整值覆盖"]
+        CH_PII["pii_map<br/>占位符到真实值映射"]
+    end
+
+    subgraph WRITERS["写者"]
+        W_ALL["所有节点<br/>只追加,不覆盖"]
+        W_COORD["Coordinator<br/>(graph/coordinator.py)<br/>每次路由覆盖一次"]
+        W_ENTRY["入口脱敏<br/>chat.invoke_chat<br/>图内节点不写"]
+    end
+
+    W_ALL -- "多写者,靠 add_messages 合并" --> CH_MSG
+    W_COORD -- "唯一写者" --> CH_ROUTE
+    W_ENTRY -- "唯一写者" --> CH_PII
+
+    CH_PII -. "工具层经 config 读同一份映射<br/>还原入参,脱敏结果" .-> TOOLS["工具层<br/>tool_providers.py"]
+
+    STATE --> CKPT["Checkpointer 负责落盘<br/>按 thread_id 存取<br/>checkpoints.sqlite3"]
+
+    RULE -.-> STATE

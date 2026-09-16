@@ -1,0 +1,20 @@
+%% e7-trace-structure 一条 Langfuse trace 的树形结构与三维归因
+flowchart TB
+    TR["trace:一次 /chat 请求<br/>session = thread_id<br/>user = customer_id"]
+
+    TR --> MC["span:manage_context<br/>超阈值才调 LLM 压缩摘要"]
+    TR --> CO["span:coordinator"]
+    TR --> DM["span:领域子图 run<br/>metadata 打 agent 标签"]
+    TR --> SM["span:save_memory<br/>有触发词才调 LLM"]
+
+    CO --> CO_LLM["observation:LLM 调用<br/>完整 prompt + 输出 JSON<br/>{target, rationale}"]
+
+    DM --> DM_LLM["observation:领域 LLM 调用<br/>bind_tools 后的请求/响应"]
+    DM --> DM_TOOL["observation:工具调用<br/>入参 / 返回 / 耗时"]
+
+    ATTR["三维归因<br/>session:langfuse_session_id = thread_id<br/>user:langfuse_user_id = customer_id<br/>agent:metadata.agent = 领域名"]
+    COST["成本:Langfuse 平台价格表查表<br/>DeepSeek 单价经 make langfuse-prices 写入"]
+
+    TR -.-> ATTR
+    DM_LLM -.-> COST
+    DM_TOOL -.-> COST

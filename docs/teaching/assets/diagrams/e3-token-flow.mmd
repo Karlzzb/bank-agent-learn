@@ -1,0 +1,39 @@
+%% e3-token-flow JWT 从 mock IdP 到 MCP Server 的完整流转,LLM 全程看不到 token
+sequenceDiagram
+    autonumber
+    participant C as 客户
+    participant IdP as mock IdP<br/>(auth/idp.py)
+    participant API as API<br/>(api.py /chat)
+    participant LLM as LLM
+    participant T as 工具层<br/>(tool_providers.py)
+    participant M as MCP Server<br/>(mcp_servers/common.py)
+
+    Note over LLM: 全程看不到 token<br/>token 不进 prompt<br/>不进 LLM 可见的工具参数
+
+    C->>IdP: 登录(customer_id + scopes)
+    IdP-->>C: 签发 JWT(HS256, sub + scopes + exp)
+
+    C->>API: POST /chat<br/>Authorization: Bearer <jwt>
+    API->>API: verify_token 验签(api.py require_auth)
+    alt 验签失败
+        API-->>C: 401 缺少 Bearer token / token 无效或已过期
+    else 无任何业务 scope
+        API-->>C: 403 token 不含任何业务权限
+    end
+
+    API->>API: invoke_chat 拼装 config<br/>auth(含 token)放 configurable 通道
+    Note over API,LLM: token 只走 LangGraph config 通道<br/>绝不进 prompt 或工具参数
+
+    LLM->>T: 发起工具调用(只见业务参数,不见 customer_id/token)
+    T->>T: 第一道 scope 校验(check_scope)<br/>不足:直接返回错误 JSON
+    T->>M: call_tool<br/>请求头 X-Bank-Token: <jwt><br/>(fastmcp 4 剥离 Authorization,故用专用头)
+    M->>M: verify_token + check_scope<br/>customer_id 只来自 token
+    alt scope 不足
+        M-->>T: ToolError 权限不足(403 语义)
+        T-->>LLM: 错误 JSON
+    else 校验通过
+        M-->>T: 业务结果(customer_id 由服务端注入,LLM 无法伪造)
+        T-->>LLM: 脱敏后的工具结果
+    end
+    LLM-->>API: 生成回复
+    API-->>C: ChatResponse(thread_id, reply, route)

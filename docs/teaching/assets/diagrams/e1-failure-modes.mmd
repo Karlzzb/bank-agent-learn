@@ -1,0 +1,21 @@
+%% e1-failure-modes 天真单 Agent 挂满全部工具后,四道演示题各自的翻车姿势
+flowchart TB
+    NAIVE["天真单 Agent<br/>一个 ReAct 循环 + 7 个领域工具<br/>+ 一句 system prompt<br/>无路由,无授权,无记忆"]
+
+    Q1["题 1 跨领域<br/>查余额 + 调最近那笔房租明细<br/>(accounts + transactions)"]
+    Q2["题 2 混合指令<br/>320 块 5 在哪刷的 + 开个结单<br/>(明细 + 结单两种工具)"]
+    Q3["题 3 连续两个写操作<br/>改地址 + 申请支票簿"]
+    Q4["题 4 越权查询<br/>帮我查查 C002 的余额"]
+
+    F1["失败:选错工具 / 漏办一半<br/>后果:只干了半件事<br/>职责面太宽,不是模型笨"]
+    F2["失败:上下文膨胀<br/>7 个工具 schema 约 1300 字符<br/>真实银行几十上百个工具<br/>后果:挤爆 prompt,稀释注意力,成本失控"]
+    F3["失败:写操作顺序 / 确认失控<br/>参数张冠李戴<br/>后果:地址改错,支票簿寄错"]
+    F4["安全事故:LLM 自填 customer_id=C002<br/>无任何授权边界<br/>后果:别人的余额直接念出来<br/>前三题是质量问题,这题让银行上新闻"]
+
+    NAIVE --> Q1 --> F1
+    NAIVE --> Q2 --> F2
+    NAIVE --> Q3 --> F3
+    NAIVE --> Q4 --> F4
+
+    style Q4 fill:#7f1d1d,stroke:#dc2626,color:#fff
+    style F4 fill:#dc2626,stroke:#7f1d1d,color:#fff

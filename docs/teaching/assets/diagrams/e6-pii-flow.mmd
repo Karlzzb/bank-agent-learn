@@ -1,0 +1,22 @@
+%% e6-pii-flow PII 三道边界数据流:入站脱敏、工具层还原、出站回填
+flowchart LR
+    C["客户消息<br/>含真实手机号 13800001111"]
+    M["①入站脱敏 mask_text<br/>13800001111 → [PHONE_1]<br/>映射写入会话 state 的 pii_map"]
+    T["②工具层还原 rehydrate<br/>[PHONE_1] → 13800001111<br/>不经 LLM"]
+    B["MCP / 银行核心<br/>只见真实值"]
+    TR["工具结果脱敏 mask_text<br/>真实值 → 占位符<br/>新映射并入 pii_map"]
+    O["③出站回填 rehydrate<br/>[PHONE_1] → 13800001111"]
+    CU["客户看到真实值<br/>脱敏全程透明"]
+    MEM["save_memory<br/>含占位符的提取条目一律丢弃<br/>不进长期记忆 store"]
+
+    subgraph LLM_BOX["第三方 LLM 边界(只见占位符)"]
+        L["LLM<br/>上下文里只有 [PHONE_1]<br/>工具入参也是占位符"]
+    end
+
+    C --> M --> L
+    L -- "工具入参(占位符)" --> T --> B
+    B --> TR --> L
+    L -- "回复(含占位符)" --> O --> CU
+    L -.-> MEM
+
+    style LLM_BOX stroke-dasharray: 5 5

@@ -1,0 +1,33 @@
+%% e5-memory-flow 双轨记忆:会话内摘要压缩(上轨)与跨会话偏好(下轨)
+flowchart TB
+    subgraph IN_SESSION["上轨:会话内记忆(manage_context)"]
+        S1["每轮对话开始<br/>检查 state.messages 条数"]
+        S2{"消息数 &gt; HISTORY_MAX_MESSAGES<br/>= 12 ?"}
+        S3["不压缩,原样进图"]
+        S4["找切口:最近 KEEP_RECENT = 4 条原文保留<br/>切口对齐 HumanMessage 边界<br/>不拆散 AIMessage + ToolMessage"]
+        S5["最旧一段交 LLM 压缩成摘要<br/>摘要原位替换最早一条消息<br/>其余旧消息 RemoveMessage 移除"]
+        S6["找不到安全切口<br/>本轮不压缩,等下一轮"]
+        S1 --> S2
+        S2 -- "否" --> S3
+        S2 -- "是" --> S4
+        S4 --> S5
+        S4 -. "无 HumanMessage 切口" .-> S6
+    end
+
+    subgraph CROSS_SESSION["下轨:跨会话记忆(save_memory / load_preferences)"]
+        C1["取最新一条用户消息"]
+        C2{"含触发词?<br/>记住 / 常用 / 默认 / 以后 / 偏好"}
+        C3["零成本穿透,不调 LLM"]
+        C4["LLM 按 MEMORY_EXTRACT_PROMPT<br/>提取偏好键值对"]
+        C5["含 PII 占位符的条目丢弃<br/>占位符是会话作用域,跨会话无意义"]
+        C6["写入 store<br/>命名空间 profiles.&lt;customer_id&gt;<br/>如 profiles.C001"]
+        C7["下次会话:领域 runner 调子图前<br/>load_preferences 读回<br/>渲染成 system 文本注入 memory_context"]
+        C1 --> C2
+        C2 -- "否" --> C3
+        C2 -- "是" --> C4 --> C5 --> C6
+        C6 -. "跨会话" .-> C7
+    end
+
+    S5 --> DB1[("checkpoints.sqlite3<br/>会话状态随 checkpointer 落盘")]
+    C6 --> DB2[("memory.sqlite3<br/>LangGraph BaseStore(SqliteStore)")]
+    C7 -.读取.- DB2

@@ -1,0 +1,18 @@
+%% e8-eval-flow 评测回归流程:改 prompt 后跑全量用例、对比报告、全绿才合并
+flowchart LR
+    E["改 prompt<br/>(系统 prompt / 工具 docstring)"]
+    R["python -m evals.run --real<br/>跑 40 条用例,真实 LLM<br/>routing 18 / tools 16 / quality 6"]
+    RP["生成报告 evals/reports/*.json<br/>meta 带 git_sha<br/>+ prompts_sha256_12"]
+    CP["python -m evals.compare 旧报告 新报告<br/>按 case id 对齐"]
+    D{"分数涨跌对比<br/>PASS↔FAIL 翻转<br/>quality 得分变化"}
+    OK["全绿:合并"]
+    NG["有回退:回滚或再改"]
+
+    E --> R --> RP --> CP --> D
+    D -- "无回退" --> OK
+    D -- "有用例变坏" --> NG --> E
+
+    CI["CI 模式:python -m evals.run<br/>ScriptedChatModel 预录脚本<br/>零 API 消耗,失败退出码 1"]
+    CI -.-> R
+
+    style CI stroke-dasharray: 5 5

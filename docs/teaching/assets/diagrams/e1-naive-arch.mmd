@@ -1,0 +1,20 @@
+%% E1 反面教材:单个胖 Agent 挂全部 7 个工具
+flowchart TB
+    UI["用户"]
+    NAIVE["胖 Agent<br/>单个 system prompt<br/>绑定全部 7 个工具"]
+    LLM["第三方 LLM"]
+
+    subgraph MCP["三个 MCP Server"]
+        MA["accounts-mcp :8101<br/>query_balance"]
+        MT["transactions-mcp :8102<br/>list_transactions / get_transaction_detail / request_statement"]
+        MS["service-mcp :8103<br/>change_address / request_cheque_book / update_kyc"]
+    end
+
+    DB[("bank.sqlite3")]
+
+    UI --> NAIVE
+    LLM <--> NAIVE
+    NAIVE --> MA & MT & MS
+    MA & MT & MS --> DB
+
+    style NAIVE fill:#ffcdd2,stroke:#c62828,stroke-width:2px

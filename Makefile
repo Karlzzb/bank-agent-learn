@@ -1,6 +1,6 @@
 PYTHON := .venv/bin/python
 
-.PHONY: setup seed run test lint cli langfuse-prices eval eval-real
+.PHONY: setup seed run test lint cli langfuse-prices eval eval-real diagrams
 
 setup:
 	python3.12 -m venv .venv
@@ -30,3 +30,6 @@ eval:
 
 eval-real:
 	$(PYTHON) -m evals.run --real
+
+diagrams:
+	bash scripts/render-diagrams.sh
